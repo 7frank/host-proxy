@@ -3,7 +3,8 @@ import hostile from 'hostile';
 import inquirer from "inquirer";
 import chalk from 'chalk';
 import z from 'zod';
-import { $ ,file} from "bun"
+import { $, file } from "bun"
+import type { Host, HostsLines } from './types';
 
 /**
  * Note: Run with `sudo bun run ./hosts.ts`
@@ -13,15 +14,6 @@ import { $ ,file} from "bun"
 const getAll = promisify(hostile.get);
 const setHost = promisify(hostile.set);
 const removeHost = promisify(hostile.remove);
-
-const Host = z.object({
-    ip: z.string().optional(),
-    host: z.string(),
-    active: z.boolean(),
-})
-type Host = z.infer<typeof Host>
-const HostsLines = z.array(z.tuple([z.string(), z.string()]))
-type HostsLines = z.infer<typeof HostsLines>
 
 
 async function updateHosts(hosts: Host[]) {
@@ -61,23 +53,29 @@ let defaultHosts: Host[] = [
 ];
 
 // add ip if not exists
-defaultHosts = defaultHosts.map((host) => {
+
+
+function addIpIfMissing(host: Host) {
     if (!host.ip) {
         host.ip = '127.0.0.1';
     }
     return host;
-});
+}
 
+function setHostsByActiveHosts(activeHosts: Host[]) {
+    return (host: Host) => ({
+        ...host,
+        active: activeHosts.some(it => it.host === host.host)
+    })
+}
 
+defaultHosts = defaultHosts.map(addIpIfMissing);
 const lines: HostsLines = await getAll(false)
 const currentActiveHosts = lines.map(([ip, host]) => ({ ip, host, active: true }))
 
+
 // set defaultHosts to active or not active based on current active hosts
-defaultHosts = defaultHosts.map((host) => {
-    const activeExists = currentActiveHosts.some(it => it.host === host.host);
-    host.active = activeExists;
-    return host;
-})
+defaultHosts = defaultHosts.map(setHostsByActiveHosts(currentActiveHosts))
 
 // use inquirer and list all options of hosts. let the user select or unselect
 const res = await inquirer.prompt<{ hosts: Host[] }>([
@@ -94,10 +92,7 @@ const res = await inquirer.prompt<{ hosts: Host[] }>([
 ])
 
 // update hosts with active status
-const updatedHosts = defaultHosts.map(host => ({
-    ...host,
-    active: res.hosts.some(it => it.host === host.host)
-}))
+const updatedHosts = defaultHosts.map(setHostsByActiveHosts(res.hosts))
 
 
 updateHosts(updatedHosts);
