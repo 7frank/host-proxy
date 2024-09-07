@@ -2,21 +2,26 @@ import { promisify } from 'util';
 import hostile from 'hostile';
 import inquirer from "inquirer";
 import chalk from 'chalk';
+import z from 'zod';
+import { $ ,file} from "bun"
+
+/**
+ * Note: Run with `sudo bun run ./hosts.ts`
+ */
 
 
 const getAll = promisify(hostile.get);
 const setHost = promisify(hostile.set);
 const removeHost = promisify(hostile.remove);
 
-
-
-type Host = {
-    ip?: string;
-    host: string;
-    active: boolean;
-}
-type HostsLines = [ip: string, host: string][];
-
+const Host = z.object({
+    ip: z.string().optional(),
+    host: z.string(),
+    active: z.boolean(),
+})
+type Host = z.infer<typeof Host>
+const HostsLines = z.array(z.tuple([z.string(), z.string()]))
+type HostsLines = z.infer<typeof HostsLines>
 
 
 async function updateHosts(hosts: Host[]) {
@@ -36,15 +41,14 @@ async function updateHosts(hosts: Host[]) {
     }
 }
 
-/**
- * Run with `sudo bun run ./hosts.ts`
- */
+
 
 /**
  * Defines the default hosts that can be proxied with local development.
  * Each host has a `host` property representing the hostname, and an `active` property
  * indicating whether the host is currently active for proxying.
  */
+
 let defaultHosts: Host[] = [
     {
         host: 'msl-documentation.kong.7frank.internal.jambit.io',
