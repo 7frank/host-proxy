@@ -1,0 +1,10 @@
+[
+    {
+        "host": "msl-documentation.kong.7frank.internal.jambit.io",
+        "active": true
+    },
+    {
+        "host": "msl-search.internal.jambit.io",
+        "active": false
+    }
+]

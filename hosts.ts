@@ -4,7 +4,7 @@ import inquirer from "inquirer";
 import chalk from 'chalk';
 import z from 'zod';
 import { $, file } from "bun"
-import type { Host, HostsLines } from './types';
+import { Host, HostsLines } from './types';
 import { addIpIfMissing, getAll, setHostsByActiveHosts, updateHosts } from './utils';
 
 /**
@@ -18,16 +18,15 @@ import { addIpIfMissing, getAll, setHostsByActiveHosts, updateHosts } from './ut
  * indicating whether the host is currently active for proxying.
  */
 
-let defaultHosts: Host[] = [
-    {
-        host: 'msl-documentation.kong.7frank.internal.jambit.io',
-        active: true,
-    },
-    {
-        host: 'msl-search.internal.jambit.io',
-        active: false,
-    },
-];
+
+
+// load default hosts from file via bun shell
+let rawHosts: Host[] =await Bun.file('./hosts.json').json()
+let { success, data: defaultHosts, error } = Host.array().safeParse(rawHosts)
+if (!success || !defaultHosts) {
+    console.error('Failed to parse hosts:', error)
+    process.exit(1)
+}
 
 defaultHosts = defaultHosts.map(addIpIfMissing);
 const lines: HostsLines = await getAll(false)
