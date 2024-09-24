@@ -1,5 +1,7 @@
 # host-proxy
 
+Have a config file to manage etc/hosts proxies for projects
+
 To install dependencies:
 
 ```bash
@@ -12,4 +14,3 @@ To run:
 bun run index.ts
 ```
 
-This project was created using `bun init` in bun v1.1.27. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
